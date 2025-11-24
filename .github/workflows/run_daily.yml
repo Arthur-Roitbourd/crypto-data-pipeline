@@ -1,0 +1,39 @@
+name: 🕒 Daily Crypto Data Update
+
+on:
+  schedule:
+    - cron: '0 10 * * *'  # 10h00 UTC = 12h00 heure de Paris (été) / 11h00 (hiver)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔀 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install dependencies
+        run: |
+          pip install requests pandas matplotlib
+
+      - name: 📥 Fetch & Save Data
+        run: python crypto_tracker.py
+
+      - name: 📈 Generate Dashboard
+        run: python plot_crypto.py
+
+      - name: ✅ Commit & Push Updates
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add crypto_prices.csv crypto_dashboard.png
+          git diff --quiet && git diff --staged --quiet || git commit -m "📊 Daily update $(date +'%Y-%m-%d')"
+          git push
